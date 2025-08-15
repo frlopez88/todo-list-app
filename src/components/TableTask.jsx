@@ -1,6 +1,7 @@
 import React, { useEffect, useState } from 'react'
 import { DynamoDBClient } from '@aws-sdk/client-dynamodb'
-import { DynamoDBDocumentClient, ScanCommand } from '@aws-sdk/lib-dynamodb'
+import { DynamoDBDocumentClient, ScanCommand , DeleteCommand } from '@aws-sdk/lib-dynamodb'
+import { useNavigate } from 'react-router-dom'
 
 const client = new DynamoDBClient({
     region: import.meta.env.VITE_REGION,
@@ -37,27 +38,62 @@ export const TableTask = () => {
 
     }
 
+    const navigate  = useNavigate()
+
+    const showEdit = (item)=>{
+
+        
+        navigate(`/editTask/${item.id}/${item.Text}/${item.IsCompleted}`)
+
+    }
+
+    const deleteHandler = async (id)=> {
+
+        try {
+
+            const command = new DeleteCommand({
+               TableName :  TABLE_NAME, 
+               Key : {id},
+            })
+
+            const result = await ddb.send(command)
+            getTask()
+
+        }catch(err){
+            console.log(err)
+        }
+
+    }
+
     useEffect(() => {
         getTask()
     }, [])
 
     return (
         <>
-            <table style={{ margin: "10%", border: "solid" }}>
-                <thead>
+            <table  className='min-w-full divide-y divide-gray-200'>
+                <thead className='bg-blue-100 text-gray-800'>
                     <tr>
                         <th>Id</th>
                         <th>Text</th>
                         <th>Complete</th>
+                        <th>Edit</th>
+                        <th>Delete</th>
                     </tr>
                 </thead>
                 <tbody>
                    {
                     info.map( (item)=>(
-                        <tr key={item.id}>
+                        <tr  className='text-center' key={item.id}>
                             <td>{item.id}</td>
                             <td>{item.Text}</td>
-                            <td>{ item.IsComplete ? "True" : "False" }</td>
+                            <td>{ item.IsCompleted ? "True" : "False" }</td>
+                            <td> <button className='bg-yellow-400 min-w-full rounded' onClick={
+                                ()=> showEdit(item)
+                            } >Edit</button> </td>
+                            <td> <button className='bg-red-400 min-w-full rounded' onClick={
+                                ()=> deleteHandler(item.id)
+                            } >Delete</button> </td>
                         </tr>
                     ))
                    }
